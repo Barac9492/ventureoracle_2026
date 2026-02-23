@@ -7,6 +7,8 @@ from ventureoracle.db.database import get_session
 from ventureoracle.db.models import Content, ContentSource
 from ventureoracle.ingestion.file_import import FileIngestor
 from ventureoracle.ingestion.linkedin import LinkedInIngestor
+from ventureoracle.ingestion.rss import RssIngestor
+from ventureoracle.ingestion.substack import SubstackIngestor
 
 
 def test_file_ingestor_reads_markdown(tmp_path):
@@ -107,3 +109,90 @@ def test_content_hash_deduplication():
 
     different_hash = Content.compute_hash("Different text entirely.")
     assert hash1 != different_hash
+
+
+class MockHttpxResponse:
+    def __init__(self, content):
+        self.content = content
+
+    def raise_for_status(self):
+        pass
+
+
+def test_rss_ingestor(monkeypatch):
+    """RssIngestor should parse RSS XML correctly."""
+    rss_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Test Blog</title>
+        <link>http://test.com</link>
+        <description>Test Blog Description</description>
+        <item>
+          <title>Test Post 1</title>
+          <link>http://test.com/post1</link>
+          <description>This is the first test post.</description>
+          <pubDate>Mon, 01 Jan 2024 10:00:00 GMT</pubDate>
+          <guid>http://test.com/post1</guid>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    def mock_get(*args, **kwargs):
+        return MockHttpxResponse(rss_xml)
+
+    monkeypatch.setattr("httpx.get", mock_get)
+
+    session = get_session()
+    source = ContentSource(
+        platform="rss",
+        identifier="http://test.com/feed",
+        display_name="Test RSS",
+    )
+    session.add(source)
+    session.commit()
+
+    ingestor = RssIngestor()
+    contents = ingestor.ingest(source)
+
+    assert len(contents) == 1
+    assert contents[0].title == "Test Post 1"
+    assert "first test post" in contents[0].body
+    assert contents[0].url == "http://test.com/post1"
+
+
+def test_substack_ingestor(monkeypatch):
+    """SubstackIngestor should parse Substack RSS identical to generic RSS."""
+    rss_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <title>Substack Blog</title>
+        <item>
+          <title>Substack Post</title>
+          <link>http://substack.com/post1</link>
+          <description>Substack body content.</description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    def mock_get(*args, **kwargs):
+        return MockHttpxResponse(rss_xml)
+
+    monkeypatch.setattr("httpx.get", mock_get)
+
+    session = get_session()
+    source = ContentSource(
+        platform="substack",
+        identifier="http://substack.com/feed",
+        display_name="Test Substack",
+    )
+    session.add(source)
+    session.commit()
+
+    ingestor = SubstackIngestor()
+    contents = ingestor.ingest(source)
+
+    assert len(contents) == 1
+    assert contents[0].title == "Substack Post"
+    assert "Substack body" in contents[0].body

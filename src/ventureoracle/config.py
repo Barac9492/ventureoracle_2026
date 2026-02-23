@@ -1,11 +1,12 @@
 """Configuration management using Pydantic Settings."""
 
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from typing import Tuple, Type
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables and .env file."""
+    """Application settings loaded from environment variables, .env file, and settings.yaml."""
 
     # API Keys
     anthropic_api_key: str = ""
@@ -26,9 +27,32 @@ class Settings(BaseSettings):
     # Project paths
     project_root: Path = Path(".")
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        yaml_file="config/settings.yaml",
+        yaml_file_encoding="utf-8"
+    )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            YamlConfigSettingsSource(settings_cls),
+            file_secret_settings,
+        )
 
 
 def get_settings() -> Settings:
     """Get application settings singleton."""
     return Settings()
+

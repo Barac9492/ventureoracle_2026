@@ -127,14 +127,14 @@ ventureoracle_2026/
 
 ### Phase 1: Foundation (Current Sprint)
 - [x] Create CLAUDE.md
-- [ ] Set up Python project (pyproject.toml, dependencies)
-- [ ] Create database models and migrations
-- [ ] Build config system (settings.yaml loader)
-- [ ] Build Substack RSS ingestion connector
-- [ ] Build generic RSS feed connector
-- [ ] Build LinkedIn connector (scraper-based)
-- [ ] Build CLI skeleton with `ingest` command
-- [ ] Write tests for ingestion
+- [x] Set up Python project (pyproject.toml, dependencies)
+- [x] Create database models and migrations
+- [x] Build config system (settings.yaml loader)
+- [x] Build Substack RSS ingestion connector
+- [x] Build generic RSS feed connector
+- [x] Build LinkedIn connector (scraper-based)
+- [x] Build CLI skeleton with `ingest` command
+- [x] Write tests for ingestion
 
 ### Phase 2: Style Learning & Profiling
 - [ ] Build writing style analyzer (Claude-powered)
