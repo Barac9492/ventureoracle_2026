@@ -1,12 +1,15 @@
 """VentureOracle CLI — Click-based command interface."""
 
 import json
+import logging
 import sys
 
 import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
+logger = logging.getLogger(__name__)
 
 from ventureoracle.db.database import get_session, init_db
 from ventureoracle.db.models import (
@@ -22,8 +25,14 @@ console = Console()
 
 
 @click.group()
-def cli():
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
+def cli(verbose: bool):
     """VentureOracle — Personal content engine, idea discovery, and prediction platform."""
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.WARNING,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
     init_db()
 
 
@@ -194,7 +203,12 @@ def profile_analyze():
         return
 
     console.print(f"Analyzing {len(contents)} pieces of content...")
-    prof = build_profile(contents)
+    try:
+        prof = build_profile(contents)
+    except Exception as e:
+        logger.error("Profile analysis failed: %s", e)
+        console.print(f"[red]Error building profile: {e}[/red]")
+        return
     console.print(f"[green]Profile built! Version {prof.version}, {prof.sample_count} samples analyzed.[/green]")
 
 
@@ -215,7 +229,12 @@ def discover_scan(feed_url: str):
     """Scan an RSS feed for interesting content."""
     from ventureoracle.discovery.search import scan_rss_feed
 
-    discoveries = scan_rss_feed(feed_url)
+    try:
+        discoveries = scan_rss_feed(feed_url)
+    except Exception as e:
+        logger.error("RSS scan failed: %s", e)
+        console.print(f"[red]Error scanning feed: {e}[/red]")
+        return
     session = get_session()
 
     for d in discoveries:
@@ -241,7 +260,12 @@ def discover_search(query: str, count: int):
     """Search the web for content matching a query (requires Brave API key)."""
     from ventureoracle.discovery.search import search_brave
 
-    discoveries = search_brave(query, count=count)
+    try:
+        discoveries = search_brave(query, count=count)
+    except Exception as e:
+        logger.error("Web search failed: %s", e)
+        console.print(f"[red]Error searching: {e}[/red]")
+        return
     if not discoveries:
         console.print("[yellow]No results. Check your BRAVE_API_KEY in .env[/yellow]")
         return
@@ -294,7 +318,12 @@ def discover_topics(count: int):
         return
 
     console.print("Generating topic recommendations...")
-    recommendations = recommend_topics(prof, discoveries, count=count)
+    try:
+        recommendations = recommend_topics(prof, discoveries, count=count)
+    except Exception as e:
+        logger.error("Topic recommendation failed: %s", e)
+        console.print(f"[red]Error generating recommendations: {e}[/red]")
+        return
 
     for rec in recommendations:
         session.add(rec)
@@ -348,7 +377,12 @@ def predict_generate(count: int):
     )
 
     console.print("Generating predictions...")
-    predictions = generate_predictions(prof, discoveries, count=count)
+    try:
+        predictions = generate_predictions(prof, discoveries, count=count)
+    except Exception as e:
+        logger.error("Prediction generation failed: %s", e)
+        console.print(f"[red]Error generating predictions: {e}[/red]")
+        return
 
     for pred in predictions:
         session.add(pred)
@@ -507,6 +541,29 @@ def dashboard():
 
 
 # ---------------------------------------------------------------------------
+# Scheduler
+# ---------------------------------------------------------------------------
+
+
+@cli.command("run")
+@click.option("--ingest-hours", default=6, help="Hours between auto-ingest runs")
+@click.option("--discover-hours", default=12, help="Hours between auto-discover runs")
+def run_scheduler(ingest_hours: int, discover_hours: int):
+    """Start the scheduler for automatic ingestion and discovery."""
+    from ventureoracle.scheduler import start_scheduler
+
+    console.print(
+        f"[green]Starting scheduler: ingest every {ingest_hours}h, discover every {discover_hours}h[/green]"
+    )
+    console.print("[dim]Press Ctrl+C to stop[/dim]")
+
+    try:
+        start_scheduler(ingest_hours=ingest_hours, discover_hours=discover_hours)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Scheduler stopped.[/yellow]")
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -527,3 +584,25 @@ def _save_contents(session, contents: list[Content]):
     skipped = len(contents) - len(new_contents)
     if skipped > 0:
         console.print(f"[dim]Skipped {skipped} duplicate(s)[/dim]")
+
+
+# ---------------------------------------------------------------------------
+# API Server
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def api():
+    """Manage the VentureOracle REST API."""
+    pass
+
+
+@api.command("serve")
+@click.option("--host", default="127.0.0.1", help="Host interface to bind to")
+@click.option("--port", default=8000, help="Port to bind to")
+@click.option("--reload", is_flag=True, help="Enable auto-reload for development")
+def api_serve(host: str, port: int, reload: bool):
+    """Start the FastAPI backend server."""
+    import uvicorn
+    console.print(f"[green]Starting API server on http://{host}:{port}[/green]")
+    uvicorn.run("ventureoracle.api.app:app", host=host, port=port, reload=reload)

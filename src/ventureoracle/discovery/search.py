@@ -1,5 +1,6 @@
 """Web search and RSS scanning for content discovery."""
 
+import logging
 from datetime import datetime
 
 import atoma
@@ -8,9 +9,12 @@ import httpx
 from ventureoracle.config import get_settings
 from ventureoracle.db.models import Content, DiscoveredContent
 
+logger = logging.getLogger(__name__)
+
 
 def scan_rss_feed(feed_url: str, since: datetime | None = None) -> list[DiscoveredContent]:
     """Scan an RSS feed for new content."""
+    logger.debug("Scanning RSS feed: %s", feed_url)
     response = httpx.get(feed_url, timeout=15, follow_redirects=True)
     response.raise_for_status()
     raw = response.content
@@ -62,6 +66,7 @@ def scan_rss_feed(feed_url: str, since: datetime | None = None) -> list[Discover
                 content_hash=Content.compute_hash(title + url),
             ))
 
+    logger.info("Discovered %d items from RSS feed %s", len(discoveries), feed_url)
     return discoveries
 
 
@@ -69,6 +74,7 @@ def search_brave(query: str, count: int = 10) -> list[DiscoveredContent]:
     """Search the web using Brave Search API."""
     settings = get_settings()
     if not settings.brave_api_key:
+        logger.warning("No Brave API key configured, skipping web search")
         return []
 
     response = httpx.get(

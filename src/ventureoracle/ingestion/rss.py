@@ -1,9 +1,12 @@
 """Generic RSS/Atom feed ingestor using atoma."""
 
+import logging
 from datetime import datetime
 
 import atoma
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from ventureoracle.db.models import Content, ContentSource
 from ventureoracle.ingestion.base import BaseIngestor
@@ -18,15 +21,20 @@ class RssIngestor(BaseIngestor):
 
     def ingest(self, source: ContentSource, since: datetime | None = None) -> list[Content]:
         """Fetch entries from an RSS feed and return Content objects."""
+        logger.debug("Fetching feed: %s", source.identifier)
         response = httpx.get(source.identifier, timeout=15, follow_redirects=True)
         response.raise_for_status()
         raw = response.content
 
         # Try RSS first, then Atom
         try:
-            return self._parse_rss(raw, source, since)
+            contents = self._parse_rss(raw, source, since)
         except atoma.FeedParseError:
-            return self._parse_atom(raw, source, since)
+            logger.debug("RSS parse failed, trying Atom format")
+            contents = self._parse_atom(raw, source, since)
+
+        logger.info("Ingested %d items from %s", len(contents), source.identifier)
+        return contents
 
     def _parse_rss(
         self, raw: bytes, source: ContentSource, since: datetime | None

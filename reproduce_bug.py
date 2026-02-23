@@ -39,7 +39,9 @@ for i in range(40):
     })
 
 try:
-    print(f"Sending request with {len(messages)} messages...")
+    from ventureoracle.llm.client import ensure_unique_tool_ids
+    messages = ensure_unique_tool_ids(messages)
+    print(f"Sending request with {len(messages)} messages (IDs cleaned up)...")
     response = client.messages.create(
         model="claude-3-5-sonnet-20241022",
         max_tokens=1024,

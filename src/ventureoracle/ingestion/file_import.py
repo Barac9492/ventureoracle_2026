@@ -1,7 +1,10 @@
 """Local file ingestor for Markdown, plain text, and other files."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from ventureoracle.db.models import Content, ContentSource
 from ventureoracle.ingestion.base import BaseIngestor
@@ -32,6 +35,7 @@ class FileIngestor(BaseIngestor):
                     if content:
                         contents.append(content)
 
+        logger.info("Ingested %d files from %s", len(contents), path)
         return contents
 
     def _read_file(self, source: ContentSource, path: Path) -> Content | None:

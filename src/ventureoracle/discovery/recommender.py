@@ -1,9 +1,12 @@
 """Topic recommendation engine — matches discoveries to user profile."""
 
 import json
+import logging
 
 from ventureoracle.db.models import AuthorProfile, DiscoveredContent, TopicRecommendation
 from ventureoracle.llm.client import ask_claude_json
+
+logger = logging.getLogger(__name__)
 
 RECOMMENDATION_SYSTEM = """You are a content strategist helping an expert writer find their next
 great topic. You understand their style, interests, and audience."""
@@ -39,6 +42,7 @@ def recommend_topics(
     count: int = 5,
 ) -> list[TopicRecommendation]:
     """Generate topic recommendations based on profile and discoveries."""
+    logger.info("Generating %d topic recommendations from %d discoveries", count, len(discoveries))
     discovery_text = "\n".join(
         f"- [{d.title}]({d.url}): {d.summary[:200]}" for d in discoveries[:20]
     )

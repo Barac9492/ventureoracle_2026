@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import TypeVar, Optional, Union
 
@@ -5,6 +6,8 @@ import anthropic
 from pydantic import BaseModel
 
 from ventureoracle.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -24,6 +27,7 @@ def ensure_unique_tool_ids(messages: list[dict]) -> list[dict]:
     """
     Ensures that all tool_use IDs in a message history are unique.
     Maps old IDs to new UUIDs to maintain tool_use <-> tool_result linkage.
+    Handles consecutive identical IDs by using a queue-based mapping.
     """
     id_map = {}
     new_messages = []
@@ -36,13 +40,20 @@ def ensure_unique_tool_ids(messages: list[dict]) -> list[dict]:
                 if block.get("type") == "tool_use":
                     old_id = block["id"]
                     new_id = f"tool_{uuid.uuid4().hex}"
-                    id_map[old_id] = new_id
+                    if old_id not in id_map:
+                        id_map[old_id] = []
+                    id_map[old_id].append(new_id)
+                    
                     new_block = block.copy()
                     new_block["id"] = new_id
                     new_content.append(new_block)
                 elif block.get("type") == "tool_result":
                     old_id = block["tool_use_id"]
-                    new_id = id_map.get(old_id, old_id)
+                    if old_id in id_map and id_map[old_id]:
+                        new_id = id_map[old_id].pop(0)
+                    else:
+                        new_id = old_id
+                        
                     new_block = block.copy()
                     new_block["tool_use_id"] = new_id
                     new_content.append(new_block)
@@ -67,6 +78,7 @@ def ask_claude(
     """Send a prompt to Claude and return the text response."""
     settings = get_settings()
     client = get_client()
+    logger.debug("Calling Claude (model=%s, max_tokens=%s)", model or settings.claude_model, max_tokens or settings.claude_max_tokens)
 
     msg = client.messages.create(
         model=model or settings.claude_model,
@@ -112,5 +124,6 @@ def ask_claude_with_retry(
             if attempt == max_retries - 1:
                 raise
             wait = 2 ** (attempt + 1)
+            logger.warning("Rate limited, retrying in %ds (attempt %d/%d)", wait, attempt + 1, max_retries)
             time.sleep(wait)
     return ""  # unreachable

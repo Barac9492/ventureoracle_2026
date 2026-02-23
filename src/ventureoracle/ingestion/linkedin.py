@@ -1,8 +1,11 @@
 """LinkedIn content ingestor via data export file."""
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from ventureoracle.db.models import Content, ContentSource
 from ventureoracle.ingestion.base import BaseIngestor
@@ -37,6 +40,7 @@ class LinkedInIngestor(BaseIngestor):
             # Try reading as plain text (one post per file)
             contents = self._parse_text_file(source, path)
 
+        logger.info("Ingested %d items from LinkedIn export at %s", len(contents), path)
         return contents
 
     def _parse_json(

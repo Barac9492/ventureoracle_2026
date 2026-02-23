@@ -1,9 +1,12 @@
 """Prediction engine — Claude-powered trend analysis and forecasting."""
 
 import json
+import logging
 
 from ventureoracle.db.models import AuthorProfile, DiscoveredContent, Prediction
 from ventureoracle.llm.client import ask_claude_json
+
+logger = logging.getLogger(__name__)
 
 PREDICTION_SYSTEM = """You are a strategic analyst and forecaster. You synthesize domain expertise
 with current signals to generate well-reasoned predictions. Each prediction must include clear
@@ -44,6 +47,7 @@ def generate_predictions(
     count: int = 3,
 ) -> list[Prediction]:
     """Generate predictions based on user profile and discovered trends."""
+    logger.info("Generating %d predictions from %d signals", count, len(discoveries))
     signals_text = "\n".join(
         f"- [{d.title}]({d.url}): {d.summary[:200]}" for d in discoveries[:20]
     )

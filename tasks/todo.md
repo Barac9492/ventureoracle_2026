@@ -137,31 +137,31 @@ ventureoracle_2026/
 - [x] Write tests for ingestion
 
 ### Phase 2: Style Learning & Profiling
-- [ ] Build writing style analyzer (Claude-powered)
-- [ ] Build author profile builder (aggregate across all content)
-- [ ] Add `profile` CLI command (show learned profile)
-- [ ] Write tests for analysis
+- [x] Build writing style analyzer (Claude-powered)
+- [x] Build author profile builder (aggregate across all content)
+- [x] Add `profile` CLI command (show learned profile)
+- [x] Write tests for analysis
 
 ### Phase 3: Discovery & Recommendations
-- [ ] Build web content search (trending topics, news)
-- [ ] Build relevance scorer (match content to user profile)
-- [ ] Build topic recommender
-- [ ] Add `discover` CLI command
-- [ ] Write tests for discovery
+- [x] Build web content search (trending topics, news)
+- [x] Build relevance scorer (match content to user profile)
+- [x] Build topic recommender
+- [x] Add `discover` CLI command
+- [x] Write tests for discovery
 
 ### Phase 4: Prediction Engine
-- [ ] Build prediction engine core (Claude-powered trend analysis)
-- [ ] Build prediction tracker (store and monitor predictions)
-- [ ] Build calibration system (score accuracy over time)
-- [ ] Add `predict` CLI command
-- [ ] Add `predictions` CLI command (view/resolve predictions)
-- [ ] Write tests for prediction
+- [x] Build prediction engine core (Claude-powered trend analysis)
+- [x] Build prediction tracker (store and monitor predictions)
+- [x] Build calibration system (score accuracy over time)
+- [x] Add `predict` CLI command
+- [x] Add `predictions` CLI command (view/resolve predictions)
+- [x] Write tests for prediction
 
 ### Phase 5: Polish & Integration
-- [ ] Add `dashboard` command (summary view of all features)
-- [ ] Add scheduling (auto-ingest, auto-discover)
-- [ ] Improve error handling and logging
-- [ ] End-to-end integration tests
+- [x] Add `dashboard` command (summary view of all features)
+- [x] Add scheduling (auto-ingest, auto-discover)
+- [x] Improve error handling and logging
+- [x] End-to-end integration tests
 
 ---
 
@@ -179,4 +179,18 @@ ventureoracle dashboard
 ---
 
 ## Review
-_To be filled after each phase completion._
+
+### Phase 1 Review
+Foundation complete: DB models, config system, ingestion connectors (RSS, Substack, LinkedIn, file), CLI skeleton, LLM client. 19 tests passing.
+
+### Phase 2 Review
+Style learning and profiling complete. `analysis/style.py` provides `analyze_style()`, `extract_themes()`, and `build_profile()` — all Claude-powered via `ask_claude_json`. CLI `profile show` and `profile analyze` commands functional. 10 new tests added in `test_analysis.py` covering: `_format_samples` (basic, truncation, max limit), style analysis, theme extraction, profile building with DB persistence, and CLI integration. Full suite: 29/29 passing.
+
+### Phase 3 Review
+Discovery and recommendations complete. `discovery/search.py` provides `scan_rss_feed()` and `search_brave()`. `discovery/recommender.py` provides `recommend_topics()` (Claude-powered, includes relevance scoring). CLI `discover scan`, `discover search`, and `discover topics` commands functional. 11 new tests added in `test_discovery.py` covering: RSS scanning, hash deduplication, Brave search (with/without API key), topic recommendations (with/without data), and all 5 CLI edge cases. Full suite: 40/40 passing.
+
+### Phase 4 Review
+Prediction engine complete. `prediction/engine.py` provides `generate_predictions()` (Claude-powered). `prediction/tracker.py` provides `list_predictions()`, `resolve_prediction()`, and `get_calibration_stats()` with by-domain breakdown. CLI has `predict generate`, `predict list`, `predict resolve` (with partial ID matching), and `predict calibration`. 18 new tests in `test_prediction.py` covering: prediction generation, tracker CRUD, calibration math (overall + by-domain), outcome validation, and all CLI commands including edge cases. Full suite: 58/58 passing.
+
+### Phase 5 Review
+Polish and integration complete. Added `logging` throughout all modules (9 files) with `--verbose` flag on CLI for DEBUG level. Added try/except error handling around all external calls (Claude API, HTTP) in 5 CLI commands with user-friendly error messages. Created `scheduler.py` with `auto_ingest()` and `auto_discover()` tasks + `ventureoracle run` CLI command using `schedule` library. Added `schedule>=1.2` to deps. Created 3 end-to-end integration tests in `test_integration.py`: full pipeline (ingest->profile->discover->recommend->predict), predict without discoveries, and resolve+calibrate flow. Dashboard was already implemented. Final suite: **61/61 passing**. All 5 phases complete.

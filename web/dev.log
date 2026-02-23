@@ -1,0 +1,27 @@
+
+> web@0.1.0 dev
+> next dev -p 3001
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.68.64:3001
+
+✓ Starting...
+✓ Ready in 593ms
+⨯ TypeError: fetch failed
+    at async fetchDashboard (src/lib/api.ts:4:15)
+    at async Dashboard (src/app/page.tsx:5:16)
+  2 |
+  3 | export async function fetchDashboard() {
+> 4 |   const res = await fetch(`${API_URL}/dashboard`, { next: { revalidate: 10 } });
+    |               ^
+  5 |   if (!res.ok) throw new Error("Failed to fetch dashboard");
+  6 |   return res.json();
+  7 | } {
+  digest: '1347288802',
+  [cause]: AggregateError: 
+      at ignore-listed frames {
+    code: 'ECONNREFUSED'
+  }
+}
+ GET / 500 in 1279ms (compile: 1198ms, render: 82ms)

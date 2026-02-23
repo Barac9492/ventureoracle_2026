@@ -1,6 +1,9 @@
 """Writing style analyzer — uses Claude to profile an author's writing."""
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ventureoracle.analysis.prompts import (
     STYLE_ANALYSIS_PROMPT,
@@ -31,6 +34,7 @@ def extract_themes(contents: list[Content]) -> dict:
 
 def build_profile(contents: list[Content]) -> AuthorProfile:
     """Build a complete author profile from content and save to DB."""
+    logger.info("Building profile from %d content pieces", len(contents))
     style = analyze_style(contents)
     themes = extract_themes(contents)
 
