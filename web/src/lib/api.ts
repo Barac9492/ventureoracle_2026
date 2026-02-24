@@ -1,4 +1,4 @@
-export const API_URL = "http://localhost:8000/api";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export async function fetchDashboard() {
   const res = await fetch(`${API_URL}/dashboard`, { next: { revalidate: 10 } });
@@ -18,7 +18,7 @@ export async function fetchProfile() {
 export async function fetchPredictions(status?: string) {
   const url = new URL(`${API_URL}/predictions`);
   if (status) url.searchParams.append("status", status);
-  
+
   const res = await fetch(url.toString(), { next: { revalidate: 10 } });
   if (!res.ok) throw new Error("Failed to fetch predictions");
   return res.json();
