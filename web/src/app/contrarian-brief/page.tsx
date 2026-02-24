@@ -143,22 +143,16 @@ export default function ContrarianBriefPage() {
         const dateRange = getDateRange(posts);
 
         try {
-            // NOTE: Original code had missing API key. Keeping structure for user.
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
+            const response = await fetch("/api/report", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514",
-                    max_tokens: 1000,
-                    system: `You are an LP report writer for TheVentures. CIO is Ethan Cho.`,
-                    messages: [
-                        {
-                            role: "user",
-                            content: `Generate LP quarterly brief. Content: ${contentSummary}`,
-                        },
-                    ],
-                }),
+                body: JSON.stringify({ contentSummary }),
             });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || "Failed to generate report");
+            }
 
             const data = await response.json();
             const text = data.content

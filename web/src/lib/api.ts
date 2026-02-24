@@ -11,12 +11,16 @@ export async function fetchDashboard() {
 }
 
 export async function fetchProfile() {
-  const res = await fetch(`${API_URL}/profile`, { next: { revalidate: 60 } });
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error("Failed to fetch profile");
+  try {
+    const res = await fetch(`${API_URL}/profile`, { next: { revalidate: 60 } });
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      return null;
+    }
+    return res.json();
+  } catch (e) {
+    return null;
   }
-  return res.json();
 }
 
 export async function fetchPredictions(status?: string) {
