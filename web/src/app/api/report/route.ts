@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            return NextResponse.json(errorData, { status: response.status });
+            const message = errorData.error?.message || 'AI Report generation failed';
+            return NextResponse.json({ error: message }, { status: response.status });
         }
 
         const data = await response.json();

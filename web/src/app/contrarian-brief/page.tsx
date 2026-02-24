@@ -169,28 +169,19 @@ export default function ContrarianBriefPage() {
             setReportDraft(draft);
             localStorage.setItem(REPORT_KEY, JSON.stringify(draft));
             setView("report");
-        } catch (e) {
+        } catch (e: any) {
             console.error("Generation failed:", e);
-            alert("Report generation failed. Please try again.");
+            alert(`Report generation failed: ${e.message}`);
         }
         setGenerating(false);
     };
 
     const classifyPost = async (title: string, content: string) => {
         try {
-            const response = await fetch("https://api.anthropic.com/v1/messages", {
+            const response = await fetch("/api/classify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    model: "claude-sonnet-4-20250514",
-                    max_tokens: 1000,
-                    messages: [
-                        {
-                            role: "user",
-                            content: `Classify content: ${title} ${content.substring(0, 500)}`,
-                        },
-                    ],
-                }),
+                body: JSON.stringify({ title, content }),
             });
             const data = await response.json();
             const text = data.content?.[0]?.text || "";
