@@ -10,6 +10,7 @@ export default function Sidebar() {
         { name: 'Dashboard', path: '/' },
         { name: 'Discoveries', path: '/discoveries' },
         { name: 'Predictions', path: '/predictions' },
+        { name: 'Contrarian Brief', path: '/contrarian-brief' },
         { name: 'Profile', path: '/profile' },
     ];
 
@@ -27,8 +28,8 @@ export default function Sidebar() {
                             key={item.path}
                             href={item.path}
                             className={`block px-4 py-3 rounded-xl transition-all duration-200 font-medium ${isActive
-                                    ? 'bg-primary-500/10 text-primary-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                ? 'bg-primary-500/10 text-primary-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
                                 }`}
                         >
                             {item.name}
